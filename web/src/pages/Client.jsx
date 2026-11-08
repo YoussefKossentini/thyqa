@@ -71,6 +71,10 @@ export default function Client({ mode }) {
   const [speak, setSpeak] = useState(false);
   const bottom = useRef(null);
   const started = useRef(false);
+  const queued = useRef(null);
+  useEffect(() => {
+    try { const q = sessionStorage.getItem("thiqa_queued"); if (q) { sessionStorage.removeItem("thiqa_queued"); sessionStorage.removeItem("thiqa_queued_lang"); queued.current = q; } } catch { /* storage may be blocked */ }
+  }, []);
 
   const push = (m) => setMsgs((prev) => [...prev, { id: crypto.randomUUID?.() || Math.random(), ...m }]);
   useEffect(() => { bottom.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [msgs, offer]);
@@ -90,6 +94,10 @@ export default function Client({ mode }) {
       }
     })();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (caseId && queued.current && !hack) { const q = queued.current; queued.current = null; send(q); }
+  }, [caseId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function say(t) {
     if (!speak || !window.speechSynthesis) return;
