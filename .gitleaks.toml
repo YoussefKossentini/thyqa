@@ -1,0 +1,7 @@
+# gitleaks config: default rules, generated folders ignored.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "generated or local-only files"
+paths = ['''__pycache__''', '''\.venv''', '''(^|/)data/''', '''(^|/)\.env$''']

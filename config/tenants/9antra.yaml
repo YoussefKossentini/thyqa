@@ -1,0 +1,75 @@
+# Tenant #1: 9antra, AI training courses. All data is fictional/synthetic.
+# Prices are integer millimes (1 TND = 1000 millimes).
+
+tenant_id: 9antra
+display_name: "9antra · AI training"
+kind: training
+currency: TND
+default_product: ai_bootcamp
+
+disclosure:
+  derja: "Ena Sboui, agent IA mta3 9antra. El paiement houni test (sandbox), ma fammech flous 7a9i9iyin."
+  fr: "Je suis Sboui, l'agent IA de 9antra. Ici le paiement est un test (sandbox), sans argent réel."
+  en: "I'm Sboui, 9antra's AI agent. Payments here are sandbox tests, no real money."
+
+plans:
+  - plan_id: full
+    label: "Paiement complet"
+    installments: 1
+  - plan_id: x2
+    label: "2 tranches"
+    installments: 2
+  - plan_id: x3
+    label: "3 tranches"
+    installments: 3
+
+catalog:
+  - product_id: ai_bootcamp
+    name: "AI Engineer Bootcamp"
+    price_millimes: 1500000          # 1,500 TND
+    plans: [full, x3]
+    duration: "12 semaines"
+    schedule: "3 soirs par semaine + samedi matin"
+    highlights: ["projets réels", "mentor dédié", "certificat 9antra"]
+  - product_id: data_analyst
+    name: "Data Analyst Track"
+    price_millimes: 900000           # 900 TND
+    plans: [full, x3]
+    duration: "8 semaines"
+    schedule: "weekend"
+    highlights: ["Python, SQL, Power BI", "projet final", "certificat 9antra"]
+  - product_id: genai_weekend
+    name: "GenAI Starter"
+    price_millimes: 450000           # 450 TND
+    plans: [full, x2]
+    duration: "2 weekends"
+    schedule: "samedi + dimanche"
+    highlights: ["prompting", "agents IA", "no-code"]
+  - product_id: intro_workshop
+    name: "Atelier découverte IA"
+    price_millimes: 25000            # 25 TND
+    plans: [full]
+    duration: "2 heures"
+    schedule: "en ligne"
+    highlights: ["découverte", "questions-réponses"]
+
+discount_codes:
+  - code: STUDENT10
+    percent: 10
+    label: "Remise étudiant"
+    applies_to: [ai_bootcamp, data_analyst, genai_weekend]
+    personas: [student, broke_student]   # code checks Dr. Slimane's persona before applying it
+max_discount_percent: 10
+
+thresholds:
+  approval_threshold_millimes: 1000000   # due now > 1,000 TND -> REQUIRE_APPROVAL (R02)
+  two_approver_multiplier: 2             # due now > 2,000 TND -> two different approvers
+  risk_allow_below: 40
+  risk_block_above: 70
+  velocity_window_seconds: 300
+  velocity_free_attempts: 2              # each payment attempt beyond this adds +10 risk
+  velocity_max_attempts: 5               # 6th attempt in the window -> BLOCK (R07, card testing)
+  approval_ttl_seconds: 900
+  time_anomaly_hours: [1, 5]             # local hours [from, to) that add +5 risk
+
+approvers: [youssef, mouna, ops_lead, ops_1]

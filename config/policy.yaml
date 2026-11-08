@@ -1,0 +1,57 @@
+# Thiqa agent permission matrix (least privilege).
+#
+# Default deny: a tool not listed for an agent ends as TOOL_DENIED.
+# Bouab loads this file ONCE at startup and checks its HMAC signature
+# (config/policy.yaml.sig). A file that changes on disk while the server runs
+# raises a policy.tampered alert and is ignored. A file whose signature does not
+# match at startup puts Bouab in fail-closed mode: every agent tool is denied.
+#
+# Legit change: edit, run `python tools/sign_policy.py`, restart.
+#
+# Some guarantees live in code and cannot be granted from here
+# (see thiqa/bouab/policy.py): no agent ever gets script.activate,
+# catalog.write, policy.write, approval.grant or db.query, and
+# pay.create_intent can only belong to sandouk.
+
+version: 1
+default: deny
+
+agents:
+  sahbi:            # Voice Sales (LLM)
+    - transcript.read
+    - offer.read
+    - catalog.read
+    - turn.append
+    - offer.propose
+  fahem:            # Customer Intelligence (LLM -> strict JSON)
+    - transcript.read
+    - intelligence.write
+  sandouk:          # Payment (code). Executes only with Bouab's signed authorization
+    - pay.create_intent
+    - pay.get_status
+    - pay.propose_retry
+  si_hsab:          # Financial Analyst (read-only KPI views)
+    - kpi.read
+    - kpi.snapshot.write
+  le_renard:        # Strategy (LLM over aggregated stats only)
+    - kpi.read
+    - objection_stats.read
+    - script.propose
+  bouab:            # Security & Fraud (code + rules)
+    - risk.write
+    - audit.write
+    - approval.request
+    - case.block
+    - agent.quarantine
+    - alert.raise
+  sarrak: []        # Red team: public entry point only
+
+# Tools that go through rules + risk + decision (+ human approval)
+sensitive_tools:
+  - pay.create_intent
+
+kill_switch:
+  denied_calls: 3            # TOOL_DENIED for one agent on one case within the window -> quarantine
+  window_seconds: 60
+  burst_calls: 40            # more calls than this from one agent on one case -> quarantine
+  burst_window_seconds: 10

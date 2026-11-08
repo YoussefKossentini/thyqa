@@ -1,0 +1,141 @@
+@import "tailwindcss";
+
+/* THYQA: sealed money. Ink black and logo blue.
+   Status colours (good / warning / critical) only ever mean a decision, always with an icon and a word. */
+@theme {
+  --font-sans: "Readex Pro Variable", "Segoe UI", system-ui, sans-serif;
+  --font-kufi: "Reem Kufi Variable", "Readex Pro Variable", system-ui, sans-serif;
+
+  /* THYQA: ink black + logo blue. Client world is light; the control room swaps these variables (see [data-world="ops"]). */
+  --color-wall: #f6f7fb;
+  --color-surface: #ffffff;
+  --color-ink: #191919;
+  --color-ink-2: #4a4f5c;
+  --color-muted: #737885;
+  --color-line: #e4e6ee;
+  --color-door: #3041a2;
+  --color-door-deep: #26358a;
+  --color-door-wash: #eef0fa;
+  --color-brand: #3041a2;
+  --color-stud: #191919;
+  --color-bougain: #c0266d;
+  --color-bougain-wash: #fbe9f1;
+
+  --color-good: #1f9d55;
+  --color-good-ink: #16703d;
+  --color-good-wash: #e7f6ee;
+  --color-warn: #b7791f;
+  --color-warn-ink: #7a4f00;
+  --color-warn-wash: #fdf3df;
+  --color-crit: #d64545;
+  --color-crit-ink: #a12727;
+  --color-crit-wash: #fcecec;
+}
+
+/* Control-room world: same tokens, deep ink background. */
+[data-world="ops"] {
+  --color-wall: #0e0f14;
+  --color-surface: #15171f;
+  --color-ink: #f2f3f7;
+  --color-ink-2: #b4b8c7;
+  --color-muted: #868b9c;
+  --color-line: #2a2e3d;
+  --color-door: #7b8cff;
+  --color-door-deep: #aab6ff;
+  --color-door-wash: #1c1f2b;
+  --color-good: #34d27b;
+  --color-good-ink: #6fe3a1;
+  --color-good-wash: #12301f;
+  --color-warn: #f2b544;
+  --color-warn-ink: #f2c46d;
+  --color-warn-wash: #2e2410;
+  --color-crit: #ff5c5c;
+  --color-crit-ink: #ff8f8f;
+  --color-crit-wash: #331618;
+  background: var(--color-wall);
+  color: var(--color-ink);
+}
+
+html { font-size: 17px; }
+@media (min-width: 640px) { html { font-size: 18px; } }
+@media (min-width: 1700px) { html { font-size: 19px; } }
+@media (min-width: 2400px) { html { font-size: 24px; } }
+@media (min-width: 3200px) { html { font-size: 30px; } }
+html, body, #root { height: 100%; }
+.card { background: var(--color-surface); border: 1px solid var(--color-line); border-radius: 24px; box-shadow: 0 1px 2px rgb(11 27 51 / .06), 0 8px 24px rgb(11 27 51 / .06); }
+[data-world="ops"] .card, [data-world="ops"] .card-kids > * { box-shadow: none; }
+.card-kids > * { background: var(--color-surface); border: 1px solid var(--color-line); border-radius: 24px; padding: 1.25rem; box-shadow: 0 1px 2px rgb(20 33 61 / .04), 0 8px 24px -12px rgb(20 33 61 / .10); }
+.page-title { font-family: var(--font-kufi); letter-spacing: .01em; word-spacing: .12em; color: var(--color-door-deep); }
+.hero-wall {
+  background:
+    radial-gradient(120% 70% at 50% 0%, #e9ecfa 0%, rgb(233 236 250 / 0) 62%),
+    radial-gradient(circle at 1px 1px, rgb(48 65 162 / .09) 1px, transparent 1.2px) 0 0 / 14px 14px,
+    #f6f7fb;
+}
+[data-world="ops"] .hero-wall {
+  background:
+    radial-gradient(120% 70% at 50% 0%, #1c2140 0%, rgb(28 33 64 / 0) 62%),
+    radial-gradient(circle at 1px 1px, rgb(123 140 255 / .10) 1px, transparent 1.2px) 0 0 / 14px 14px,
+    #0e0f14;
+}
+.topbar { background: #0e0f14; border-bottom: 1px solid #2a2e3d; }
+body {
+  margin: 0;
+  background: var(--color-wall);
+    color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+:focus-visible { outline: 2px solid var(--color-door); outline-offset: 2px; border-radius: 4px; }
+::selection { background: var(--color-door-wash); }
+
+.tabular { font-variant-numeric: tabular-nums; }
+.scroll-quiet { scrollbar-width: thin; scrollbar-color: var(--color-line) transparent; }
+
+/* Fouchika's door. Leaves swing on their hinges (scaleX keeps it robust in SVG). */
+.door-leaf { transform-box: view-box; transition: transform 700ms cubic-bezier(.2,.8,.2,1); }
+.door-leaf.left { transform-origin: 34px 200px; }
+.door-leaf.right { transform-origin: 166px 200px; }
+.door[data-state="allow"] .door-leaf.left { transform: scaleX(0.18); }
+.door[data-state="allow"] .door-leaf.right { transform: scaleX(0.18); }
+.door[data-state="approval"] .door-leaf.right { transform: scaleX(0.55); }
+.door-glow { transition: opacity 500ms ease; opacity: 0; }
+.door[data-state="allow"] .door-glow.allow,
+.door[data-state="approval"] .door-glow.approval { opacity: 1; }
+.door-bar { transition: transform 260ms cubic-bezier(.3,1.4,.5,1), opacity 200ms; transform: translateX(-140px); opacity: 0; transform-box: view-box; }
+.door[data-state="block"] .door-bar { transform: translateX(0); opacity: 1; }
+.door-stud { transition: fill 300ms ease; }
+.door[data-state="block"] .door-stud { fill: var(--color-crit); }
+.door[data-state="block"].knock { animation: knock 380ms ease 1; }
+@keyframes knock { 0%,100% { transform: translateX(0) } 25% { transform: translateX(-4px) } 50% { transform: translateX(4px) } 75% { transform: translateX(-2px) } }
+.door-key { transition: opacity 300ms ease 300ms; opacity: 0; }
+.door[data-state="approval"] .door-key { opacity: 1; }
+
+.feed-enter { animation: feedIn 320ms ease-out; }
+@keyframes feedIn { from { background: var(--color-door-wash); } to { background: transparent; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .door-leaf, .door-bar, .door-glow, .door-key, .door-stud { transition: none !important; }
+  .door.knock, .feed-enter { animation: none !important; }
+}
+
+/* Display type: promise and twist, one lowercase accent line. */
+.display { font-weight: 700; letter-spacing: -0.02em; line-height: 1.08; font-size: clamp(2.5rem, 6vw, 4rem); }
+.accent-line { font-weight: 300; color: var(--color-door); letter-spacing: -0.01em; }
+.pill-btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; border-radius: 999px; font-weight: 600; min-height: 44px; padding: 0 1.4rem; text-decoration: none; transition: background-color .18s, border-color .18s, transform .18s; }
+.pill-btn.lg { min-height: 56px; padding: 0 2rem; font-size: 1.05rem; }
+.pill-btn.primary { background: var(--color-door); color: #fff; }
+.pill-btn.primary:hover { background: var(--color-door-deep); transform: translateY(-1px); }
+.pill-btn.secondary { border: 1.5px solid var(--color-ink); color: var(--color-ink); background: transparent; }
+.pill-btn.secondary:hover { background: var(--color-ink); color: var(--color-surface); }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise 220ms ease-out both; }
+@media (prefers-reduced-motion: reduce) { .rise { animation: none !important; } }
+/* Sakk seal: a circle with a stencil gap that closes when sealed. */
+.seal-gap { transition: stroke-dashoffset 400ms ease-out; }
+
+/* Form fields follow the world: readable text, native controls match the theme. */
+input, select, textarea { color: var(--color-ink); }
+[data-world="ops"] { color-scheme: dark; }

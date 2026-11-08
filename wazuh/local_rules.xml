@@ -1,0 +1,68 @@
+<!--
+  Thiqa custom rules (manager: /var/ossec/etc/rules/local_rules.xml, then restart the manager).
+  Source: data/security.jsonl (fixed fields only) + FIM on config/, .env and data/audit_anchor/.
+  Wazuh observes and alerts; Bouab decides. Test every rule with /var/ossec/bin/wazuh-logtest.
+-->
+<group name="thiqa,">
+
+  <rule id="100000" level="0">
+    <decoded_as>json</decoded_as>
+    <field name="app">^thiqa$</field>
+    <description>Thiqa security event</description>
+  </rule>
+
+  <rule id="100001" level="8">
+    <if_sid>100000</if_sid>
+    <field name="event_type">^TOOL_DENIED$</field>
+    <description>Thiqa: agent $(agent_id) was denied tool $(tool)</description>
+    <group>thiqa_tool_denied,</group>
+  </rule>
+
+  <!-- If wazuh-logtest shows it firing on the 6th event, set frequency="4". -->
+  <rule id="100002" level="12" frequency="5" timeframe="60">
+    <if_matched_sid>100001</if_matched_sid>
+    <same_field>agent_id</same_field>
+    <description>Thiqa: 5 TOOL_DENIED from $(agent_id) within 60s, quarantine request</description>
+    <group>thiqa_quarantine_request,</group>
+  </rule>
+
+  <rule id="100003" level="10">
+    <if_sid>100000</if_sid>
+    <field name="event_type">^prompt_injection_detected$</field>
+    <description>Thiqa: prompt injection blocked before Sahbi ($(reason))</description>
+  </rule>
+
+  <rule id="100004" level="12">
+    <if_sid>100000</if_sid>
+    <field name="event_type">^approval_self_attempt$|^approval_replay$|^approval_hash_mismatch$</field>
+    <description>Thiqa: forged or replayed approval ($(event_type))</description>
+  </rule>
+
+  <rule id="100005" level="14">
+    <if_sid>100000</if_sid>
+    <field name="event_type">^audit_chain_invalid$</field>
+    <description>Thiqa: audit hash chain broken ($(reason))</description>
+  </rule>
+
+  <rule id="100006" level="14">
+    <if_sid>550, 553, 554</if_sid>
+    <field name="file" type="pcre2">(?i)(policy\.yaml|[\\/]\.env$|[\\/]tenants[\\/])</field>
+    <description>Thiqa: protected file changed: $(file)</description>
+    <group>thiqa_fim,</group>
+  </rule>
+
+  <!-- Anchors are write-once: a new file is normal, a modified or deleted one is not. -->
+  <rule id="100007" level="14">
+    <if_sid>550, 553</if_sid>
+    <field name="file" type="pcre2">(?i)[\\/]audit_anchor[\\/]</field>
+    <description>Thiqa: audit anchor modified or deleted: $(file)</description>
+    <group>thiqa_fim,</group>
+  </rule>
+
+  <rule id="100008" level="11">
+    <if_sid>100000</if_sid>
+    <field name="event_type">^payment_engine_rejected$|^velocity_block$|^agent_quarantined$|^policy_file_changed$</field>
+    <description>Thiqa: $(event_type) ($(reason))</description>
+  </rule>
+
+</group>

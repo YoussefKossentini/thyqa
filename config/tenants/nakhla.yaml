@@ -1,0 +1,54 @@
+# Tenant #2: a FICTIONAL microfinance lender, to show the same agents on
+# another business with other prices and thresholds. All data is synthetic.
+# What the client pays here is the application fee; loan amounts and monthly
+# repayments are information Sboui may quote (mentionable_amounts_millimes).
+
+tenant_id: nakhla
+display_name: "Nakhla Micro · fictional lender"
+kind: microfinance
+currency: TND
+default_product: pack_artisan
+
+disclosure:
+  derja: "Ena Sboui, agent IA mta3 Nakhla Micro (fictif). El paiement test (sandbox), w el 9ardh ye5ou mouwaf9a men conseiller."
+  fr: "Je suis Sboui, agent IA de Nakhla Micro (fictif). Paiement test (sandbox) ; tout crédit passe par un conseiller."
+  en: "I'm Sboui, the AI agent of Nakhla Micro (fictional). Sandbox payment; every loan goes through an advisor."
+
+plans:
+  - plan_id: full
+    label: "Paiement unique"
+    installments: 1
+
+catalog:
+  - product_id: pack_artisan
+    name: "Micro-crédit Artisan 3 000 DT (frais de dossier)"
+    price_millimes: 60000            # 60 TND application fee
+    plans: [full]
+    duration: "12 mois"
+    schedule: "remboursement mensuel"
+    highlights: ["3 000 DT", "12 mensualités de 265 DT", "réponse sous 48h"]
+    mentionable_amounts_millimes: [3000000, 265000]
+  - product_id: pack_commerce
+    name: "Micro-crédit Commerce 8 000 DT (frais de dossier)"
+    price_millimes: 120000           # 120 TND application fee
+    plans: [full]
+    duration: "24 mois"
+    schedule: "remboursement mensuel"
+    highlights: ["8 000 DT", "24 mensualités de 380 DT", "conseiller dédié"]
+    mentionable_amounts_millimes: [8000000, 380000]
+
+discount_codes: []
+max_discount_percent: 0
+
+thresholds:
+  approval_threshold_millimes: 100000    # fee > 100 TND -> REQUIRE_APPROVAL
+  two_approver_multiplier: 2
+  risk_allow_below: 30                   # stricter than 9antra
+  risk_block_above: 60
+  velocity_window_seconds: 600
+  velocity_free_attempts: 1
+  velocity_max_attempts: 3
+  approval_ttl_seconds: 600
+  time_anomaly_hours: [0, 6]
+
+approvers: [youssef, mouna, ops_lead, ops_1]

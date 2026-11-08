@@ -1,0 +1,16 @@
+<!--
+  Add inside <ossec_config> of the AGENT that runs next to the Thiqa backend, then restart the agent.
+  Replace THIQA_DIR with the project folder:
+    Linux:   /opt/thiqa                       (example)
+    Windows: C:\Users\User\Desktop\thiqa      (agent config: C:\Program Files (x86)\ossec-agent\ossec.conf)
+-->
+<localfile>
+  <log_format>json</log_format>
+  <location>THIQA_DIR/data/security.jsonl</location>
+</localfile>
+
+<syscheck>
+  <directories realtime="yes" check_all="yes" report_changes="yes">THIQA_DIR/config</directories>
+  <directories realtime="yes" check_all="yes">THIQA_DIR/data/audit_anchor</directories>
+  <directories realtime="yes" check_all="yes" restrict=".env$">THIQA_DIR</directories>
+</syscheck>

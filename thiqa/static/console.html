@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thiqa · Ops console</title>
+<link rel="icon" href="data:,">
+<style>
+  :root { --bg:#0b1020; --panel:#121a30; --line:#24304f; --text:#e6ebf5; --muted:#8b97b3; --ok:#22c55e; --block:#ef4444; --appr:#f59e0b; --accent:#38bdf8; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:14px/1.45 system-ui, "Segoe UI", Roboto, sans-serif; }
+  header { display:flex; gap:14px; align-items:center; padding:10px 18px; border-bottom:1px solid var(--line); position:sticky; top:0; background:var(--bg); z-index:2; }
+  header h1 { font-size:18px; margin:0; letter-spacing:.3px; } header h1 span { color:var(--accent); }
+  .tag { color:var(--muted); font-size:12px; }
+  .badge { font-size:11px; padding:2px 8px; border-radius:999px; border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
+  .badge.ok { color:var(--ok); border-color:#1f5f3a; } .badge.bad { color:var(--block); border-color:#6b2020; } .badge.warn { color:var(--appr); border-color:#6b4a12; }
+  .spacer { flex:1; }
+  select, input, button { font:inherit; color:var(--text); background:#0f1730; border:1px solid var(--line); border-radius:6px; padding:5px 9px; }
+  button { cursor:pointer; } button:hover { border-color:var(--accent); } button.danger { border-color:#6b2020; } button.primary { border-color:#1d4f6b; }
+  nav { display:flex; gap:6px; padding:8px 18px; border-bottom:1px solid var(--line); }
+  nav button.active { border-color:var(--accent); color:var(--accent); }
+  main { display:grid; grid-template-columns: 1.35fr 1fr 0.9fr; gap:14px; padding:14px 18px; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:12px; min-width:0; }
+  .panel h2 { font-size:13px; text-transform:uppercase; letter-spacing:.8px; color:var(--muted); margin:0 0 10px; display:flex; gap:8px; align-items:center; }
+  #feed { height: calc(100vh - 170px); overflow-y:auto; display:flex; flex-direction:column; gap:6px; }
+  .ev { display:grid; grid-template-columns: 34px 1fr auto; gap:8px; padding:7px 8px; border:1px solid var(--line); border-radius:8px; background:#0e1630; }
+  .ev.block { border-color:#7f1d1d; background:#2a0f14; } .ev.appr { border-color:#7c4a03; background:#2a1d08; } .ev.allow { border-color:#14532d; }
+  .avatar { width:30px; height:30px; border-radius:50%; display:grid; place-items:center; font-weight:700; font-size:12px; color:#0b1020; }
+  .who { font-size:12px; color:var(--muted); } .sum { word-break:break-word; } .sum q { color:#cbd5e1; }
+  .chip { font-size:11px; font-weight:700; padding:2px 7px; border-radius:5px; align-self:start; }
+  .chip.ALLOW { background:#14532d; color:#bbf7d0; } .chip.BLOCK { background:#7f1d1d; color:#fecaca; } .chip.REQUIRE_APPROVAL { background:#78350f; color:#fde68a; }
+  .mode { font-size:10px; color:var(--muted); border:1px solid var(--line); border-radius:4px; padding:0 4px; margin-left:4px; }
+  .kpis { display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; margin-bottom:12px; }
+  .kpi { background:#0e1630; border:1px solid var(--line); border-radius:8px; padding:8px; }
+  .kpi b { display:block; font-size:20px; } .kpi small { color:var(--muted); font-size:11px; }
+  .row { display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:6px 0; }
+  .list { display:flex; flex-direction:column; gap:6px; max-height:240px; overflow-y:auto; }
+  .item { border:1px solid var(--line); border-radius:8px; padding:7px 8px; background:#0e1630; }
+  .muted { color:var(--muted); } .red { color:#fca5a5; } .green { color:#86efac; } .amber { color:#fcd34d; }
+  .bar { height:8px; background:#1e293b; border-radius:4px; overflow:hidden; } .bar > i { display:block; height:100%; background:var(--block); }
+  #verify.ok { border-color:var(--ok); color:var(--ok); } #verify.bad { border-color:var(--block); color:var(--block); }
+  .hidden { display:none !important; }
+  table { width:100%; border-collapse:collapse; } td, th { border-bottom:1px solid var(--line); padding:5px 6px; text-align:left; font-size:13px; }
+  .tab { padding:14px 18px; } .cols2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .big { font-size:28px; font-weight:700; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Thiqa <span>ثقة</span></h1>
+  <span class="tag">Sell in Derja. Trust by design.</span>
+  <span class="badge warn">SIMULATED payments</span>
+  <span id="llmBadge" class="badge">LLM ?</span>
+  <span id="siemBadge" class="badge">SIEM ?</span>
+  <span id="policyBadge" class="badge">policy ?</span>
+  <span class="spacer"></span>
+  <select id="tenant" title="Tenant"></select>
+  <input id="pin" type="password" placeholder="PIN ops" size="6">
+  <select id="approver" title="Approver"></select>
+</header>
+<nav>
+  <button data-tab="live" class="active">Live</button>
+  <button data-tab="runs">Run 1 vs Run 2</button>
+  <button data-tab="security">Security</button>
+  <button data-tab="limits">Limits</button>
+  <a class="badge" href="/client" target="_blank">client app ↗</a>
+  <a class="badge" href="/hack" target="_blank">Hack Thiqa ↗</a>
+  <a class="badge" href="/docs" target="_blank">API ↗</a>
+</nav>
+
+<main id="tab-live">
+  <section class="panel">
+    <h2>Majlis feed <span id="feedCount" class="badge">0</span><label class="muted" style="font-size:11px"><input type="checkbox" id="hideNoise" checked> hide noise</label></h2>
+    <div id="feed"></div>
+  </section>
+  <section>
+    <div class="panel">
+      <h2>KPIs <span class="badge">live</span></h2>
+      <div class="kpis" id="kpis"></div>
+    </div>
+    <div class="panel" style="margin-top:14px">
+      <h2>Hesitation Radar <span id="radarCase" class="badge">no client yet</span></h2>
+      <svg id="radar" viewBox="0 0 300 230" width="100%" height="220"></svg>
+    </div>
+    <div class="panel" style="margin-top:14px">
+      <h2>Revenue lost by objection</h2>
+      <div id="lost" class="list"></div>
+    </div>
+  </section>
+  <section>
+    <div class="panel">
+      <h2>Approvals <span id="apprCount" class="badge">0</span></h2>
+      <div id="approvals" class="list"></div>
+    </div>
+    <div class="panel" style="margin-top:14px">
+      <h2>Demo</h2>
+      <div class="row"><button data-demo="compromised-tool-call" class="danger">Sboui → pay (hijacked)</button><button data-demo="direct-engine-call" class="danger">Direct engine call</button></div>
+      <div class="row"><button data-demo="forged-token" class="danger">Forged token</button><button data-demo="amount-swap" class="danger">Amount swap after approval</button></div>
+      <div class="row"><button data-demo="self-approval">Self-approval</button><button data-demo="double-submit">Double submit</button><button data-demo="card-testing" class="danger">Card testing</button></div>
+      <div class="row"><button id="verify">Verify audit</button><button data-demo="tamper-audit" class="danger">Tamper 1 row</button></div>
+      <div class="row"><button data-demo="fake-events">Fake events</button><button data-demo="reset">Reset demo DB</button></div>
+      <pre id="demoOut" class="muted" style="white-space:pre-wrap; max-height:160px; overflow:auto; font-size:12px"></pre>
+    </div>
+  </section>
+</main>
+
+<div id="tab-runs" class="tab hidden">
+  <div class="panel">
+    <h2>The team learns</h2>
+    <div class="row">
+      <label>clients <input id="runN" type="number" value="50" min="5" max="200" style="width:70px"></label>
+      <label>seed <input id="runSeed" type="number" value="42" style="width:70px"></label>
+      <button id="run1" class="primary">1. Run (active script)</button>
+      <button id="propose" class="primary">2. Zeineb proposes v(N+1)</button>
+      <button id="activate" class="primary">3. Human activates</button>
+      <button id="run2" class="primary">4. Run again, same seed</button>
+    </div>
+    <div id="runsOut" class="cols2" style="margin-top:10px"></div>
+    <div id="recos" class="list" style="margin-top:10px; max-height:none"></div>
+    <p class="muted">SIMULATED on a fixed seed: synthetic clients, the same people in both runs, only the script changes.</p>
+  </div>
+</div>
+
+<div id="tab-security" class="tab hidden cols2">
+  <div class="panel"><h2>Alerts (Fouchika + Wazuh)</h2><div id="alerts" class="list" style="max-height:70vh"></div></div>
+  <div>
+    <div class="panel"><h2>Red team (Béji Matrix)</h2><div class="row"><button id="bench" class="danger">Run benchmark</button></div><div id="benchOut"></div></div>
+    <div class="panel" style="margin-top:14px"><h2>Quarantines</h2><div id="quar" class="list"></div></div>
+    <div class="panel" style="margin-top:14px"><h2>Agents & permissions (policy.yaml)</h2><div id="agents"></div></div>
+  </div>
+</div>
+
+<div id="tab-limits" class="tab hidden"><div class="panel" id="limits"></div></div>
+
+<script>
+const AGENTS = { sahbi:["Sboui","#22c55e"], fahem:["Dr. Slimane","#38bdf8"], sandouk:["Janet","#f59e0b"], sandouk_pay:["Janet Pay","#f59e0b"],
+  si_hsab:["Dalenda","#a78bfa"], le_renard:["Zeineb","#fb7185"], bouab:["Fouchika","#ef4444"], sarrak:["Béji Matrix","#64748b"],
+  orchestrator:["Fadhila","#94a3b8"], client:["Client","#e2e8f0"], zbayen:["Si Zahi","#cbd5e1"], wazuh:["Wazuh","#0ea5e9"], system:["System","#94a3b8"] };
+const NOISE = new Set(["case.state_changed", "kpi.updated", "siem.status", "bouab.authorization_issued"]);
+const $ = (s) => document.querySelector(s);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
+const tnd = (m) => (m / 1000).toLocaleString("fr-FR", { maximumFractionDigits: 3 }) + " DT";
+let TENANT = null, lastRadar = null, runA = null, runB = null, draftVersion = null, feedCount = 0;
+
+async function api(path, opts = {}) {
+  const headers = { "content-type": "application/json", ...(opts.headers || {}) };
+  if (opts.pin) headers["X-Ops-Pin"] = $("#pin").value;
+  const r = await fetch(path, { method: opts.method || "GET", headers, body: opts.body ? JSON.stringify(opts.body) : undefined });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error((data.detail && (data.detail.message || data.detail)) || r.statusText);
+  return data;
+}
+function who(name) { const a = AGENTS[name] || AGENTS[(name || "").split(":")[0]] || [name || "?", "#94a3b8"]; return a; }
+
+function addEvent(ev) {
+  if ($("#hideNoise").checked && NOISE.has(ev.type)) return;
+  if (ev.tenant_id !== TENANT && ev.tenant_id !== "*") return;
+  const row = el("div", "ev");
+  if (ev.decision === "BLOCK") row.classList.add("block"); else if (ev.decision === "REQUIRE_APPROVAL") row.classList.add("appr"); else if (ev.decision === "ALLOW") row.classList.add("allow");
+  const src = ev.source.startsWith("human:") ? ["Human · " + ev.source.slice(6), "#fde68a"] : who(ev.source);
+  const av = el("div", "avatar", src[0].slice(0, 2)); av.style.background = src[1];
+  const body = el("div");
+  const line = el("div", "who", src[0] + (ev.target ? " → " + (who(ev.target)[0]) : "") + " · " + new Date(ev.ts).toLocaleTimeString() + " · " + ev.type);
+  if (ev.mode) line.appendChild(el("span", "mode", ev.mode));
+  if (ev.run_id) line.appendChild(el("span", "mode", ev.run_id.split("_")[0]));
+  body.appendChild(line);
+  const sum = el("div", "sum");
+  if ((ev.type === "turn.client" || ev.type === "guard.input_flagged") && ev.payload && ev.payload.text) {
+    sum.appendChild(document.createTextNode(ev.type === "turn.client" ? "« " : "BLOCKED « "));
+    sum.appendChild(el("q", "", ev.payload.text)); sum.appendChild(document.createTextNode(" »"));
+    if (ev.payload.reasons) sum.appendChild(el("div", "who", ev.payload.reasons.join(", ")));
+  } else if (ev.type === "turn.sahbi" && ev.payload && ev.payload.text) {
+    sum.textContent = ev.payload.text;
+  } else sum.textContent = ev.summary;
+  if (ev.type === "guard.output_rewritten" && ev.payload) sum.appendChild(el("div", "who", "was: " + ev.payload.original));
+  body.appendChild(sum);
+  row.append(av, body);
+  if (ev.decision) row.appendChild(el("span", "chip " + ev.decision, ev.decision === "REQUIRE_APPROVAL" ? "APPROVAL" : ev.decision));
+  else row.appendChild(el("span"));
+  const feed = $("#feed"); feed.prepend(row);
+  while (feed.children.length > 250) feed.lastChild.remove();
+  $("#feedCount").textContent = ++feedCount;
+  if (ev.type === "fahem.analysis" && ev.payload && ev.payload.radar) { lastRadar = ev.payload; drawRadar(); $("#radarCase").textContent = (ev.case_id || "").slice(-6) + " · " + ev.payload.persona; }
+  if (["approval.requested", "approval.granted", "approval.rejected", "approval.vote"].includes(ev.type)) loadApprovals();
+  if (["kpi.updated", "payment.created", "payment.updated", "case.state_changed"].includes(ev.type)) debounceKpis();
+  if (ev.type === "siem.status") setSiem(ev.payload.online);
+  if (["security.alert", "siem.alert", "agent.quarantined"].includes(ev.type) && !$("#tab-security").classList.contains("hidden")) loadSecurity();
+}
+
+let kpiTimer = null; function debounceKpis() { clearTimeout(kpiTimer); kpiTimer = setTimeout(loadKpis, 400); }
+async function loadKpis() {
+  const k = await api(`/api/v1/kpis?tenant_id=${TENANT}`);
+  const cells = [["Interactions", k.interactions], ["Interested", k.interested], ["Conversion", Math.round(k.conversion_rate * 100) + " %"],
+    ["Revenue (sim.)", tnd(k.revenue_collected_millimes)], ["Paid", k.payments.succeeded], ["Declined", k.payments.declined],
+    ["Pending", k.payments.pending + " + " + k.payments.awaiting_approval + " appr."], ["Security alerts", k.security.alerts_total],
+    ["Injections blocked", k.security.injections_blocked], ["Tool denied", k.security.tool_denied], ["Replies rewritten", k.security.output_rewrites],
+    ["Satisfaction", k.satisfaction.score_0_100 + "/100"]];
+  const box = $("#kpis"); box.replaceChildren();
+  for (const [label, v] of cells) { const c = el("div", "kpi"); c.append(el("b", "", String(v)), el("small", "", label)); box.appendChild(c); }
+  const lost = $("#lost"); lost.replaceChildren();
+  const max = Math.max(1, ...k.revenue_lost_by_objection.map(r => r.revenue_lost_millimes));
+  if (!k.revenue_lost_by_objection.length) lost.appendChild(el("div", "muted", "No lost case yet (client leaves → lost reason = last unresolved objection)."));
+  for (const r of k.revenue_lost_by_objection) {
+    const it = el("div", "item"); it.title = r.formula;
+    it.append(el("div", "", `${r.objection}: ${tnd(r.revenue_lost_millimes)} (${r.lost_cases} cases)`));
+    const bar = el("div", "bar"); const i = el("i"); i.style.width = (100 * r.revenue_lost_millimes / max) + "%"; bar.appendChild(i); it.appendChild(bar);
+    lost.appendChild(it);
+  }
+}
+
+function drawRadar() {
+  const svg = $("#radar"); svg.replaceChildren();
+  const axes = [["price_sensitivity", "Prix"], ["trust", "Confiance"], ["urgency", "Urgence"], ["comprehension", "Compréhension"], ["intent", "Intention"]];
+  const cx = 150, cy = 118, R = 85, ns = "http://www.w3.org/2000/svg";
+  const pt = (i, v) => { const a = -Math.PI / 2 + i * 2 * Math.PI / axes.length; return [cx + Math.cos(a) * R * v / 100, cy + Math.sin(a) * R * v / 100]; };
+  for (const lvl of [25, 50, 75, 100]) { const p = document.createElementNS(ns, "polygon"); p.setAttribute("points", axes.map((_, i) => pt(i, lvl).join(",")).join(" ")); p.setAttribute("fill", "none"); p.setAttribute("stroke", "#24304f"); svg.appendChild(p); }
+  axes.forEach(([, label], i) => { const [x, y] = pt(i, 118); const t = document.createElementNS(ns, "text"); t.setAttribute("x", x); t.setAttribute("y", y); t.setAttribute("fill", "#8b97b3"); t.setAttribute("font-size", "11"); t.setAttribute("text-anchor", "middle"); t.textContent = label; svg.appendChild(t); });
+  if (!lastRadar) return;
+  const p = document.createElementNS(ns, "polygon");
+  p.setAttribute("points", axes.map(([k], i) => pt(i, lastRadar.radar[k]).join(",")).join(" "));
+  p.setAttribute("fill", "rgba(56,189,248,.25)"); p.setAttribute("stroke", "#38bdf8"); p.setAttribute("stroke-width", "2"); svg.appendChild(p);
+}
+
+async function loadApprovals() {
+  const list = await api(`/api/v1/approvals?tenant_id=${TENANT}&status=pending`);
+  $("#apprCount").textContent = list.length;
+  const box = $("#approvals"); box.replaceChildren();
+  if (!list.length) box.appendChild(el("div", "muted", "Nothing to approve."));
+  for (const a of list) {
+    const it = el("div", "item");
+    it.append(el("div", "", `${a.amount} · ${a.product_name}`), el("div", "who", `${a.required_approvals} approver(s) · ${a.approvals.length} so far · risk ${a.risk_score} · requested by ${a.requested_by}`),
+      el("div", "who", a.reasons.map(r => r.code).join(", ")));
+    const row = el("div", "row");
+    const ok = el("button", "primary", "Approve"); ok.onclick = () => vote(a.approval_id, "approve");
+    const no = el("button", "danger", "Reject"); no.onclick = () => vote(a.approval_id, "reject");
+    row.append(ok, no); it.appendChild(row); box.appendChild(it);
+  }
+}
+async function vote(id, action) {
+  try { const r = await api(`/api/v1/approvals/${id}/${action}`, { method: "POST", pin: true, body: { approver_id: $("#approver").value } }); show(r.message || r); }
+  catch (e) { show("Refused: " + e.message); }
+  loadApprovals();
+}
+function show(x) { $("#demoOut").textContent = typeof x === "string" ? x : JSON.stringify(x, null, 1); }
+
+async function loadStatus() {
+  const s = await api("/api/v1/security/status");
+  const llm = s.llm; $("#llmBadge").textContent = "LLM " + (llm.mode === "auto" ? (llm.providers.join(" → ") || "none") + " → replay → mock" : llm.mode.toUpperCase());
+  $("#llmBadge").className = "badge " + (llm.providers.length && llm.mode === "auto" ? "ok" : "warn");
+  setSiem(s.siem.online);
+  $("#policyBadge").textContent = "policy " + s.policy.signature + (s.policy.fail_closed ? " · FAIL-CLOSED" : "") + " · " + s.policy.sha256.slice(0, 8);
+  $("#policyBadge").className = "badge " + (s.policy.fail_closed ? "bad" : s.policy.signature === "valid" ? "ok" : "warn");
+}
+function setSiem(on) { $("#siemBadge").textContent = on ? "SIEM online (Wazuh)" : "SIEM offline"; $("#siemBadge").className = "badge " + (on ? "ok" : "warn"); }
+
+async function loadSecurity() {
+  const alerts = await api(`/api/v1/security/alerts?tenant_id=${TENANT}&limit=80`);
+  const box = $("#alerts"); box.replaceChildren();
+  for (const a of alerts) { const it = el("div", "item"); it.append(el("div", a.severity === "critical" ? "red" : a.severity === "high" ? "amber" : "", `[${a.source}] ${a.type}${a.rule_id ? " · rule " + a.rule_id : ""} · ${a.severity}`), el("div", "who", (a.summary || "") + " · " + new Date(a.ts).toLocaleTimeString())); box.appendChild(it); }
+  const s = await api("/api/v1/security/status");
+  const q = $("#quar"); q.replaceChildren();
+  if (!s.quarantines.length) q.appendChild(el("div", "muted", "No agent in quarantine."));
+  for (const x of s.quarantines) { const it = el("div", "item"); it.append(el("div", "red", `${x.agent_id} · case ${x.case_id.slice(-6)} · by ${x.requested_by}`), el("div", "who", x.reason)); const b = el("button", "", "Release (human)"); b.onclick = async () => { try { await api(`/api/v1/agents/${x.agent_id}/release`, { method: "POST", pin: true, body: { by: $("#approver").value, case_id: x.case_id === "*" ? null : x.case_id, tenant_id: TENANT } }); } catch (e) { alert(e.message); } loadSecurity(); }; it.appendChild(b); q.appendChild(it); }
+  const ag = await api("/api/v1/agents"); const t = el("table"); t.innerHTML = "<tr><th>Agent</th><th>Built with</th><th>Allowed tools</th></tr>";
+  for (const a of ag) { const tr = el("tr"); tr.append(el("td", "", a.name + " · " + a.role), el("td", "muted", a.built_with), el("td", "", a.allowed_tools.join(", ") || "none")); t.appendChild(tr); }
+  $("#agents").replaceChildren(t);
+}
+
+function runCard(title, s) {
+  const c = el("div", "panel");
+  c.append(el("h2", "", title), el("div", "big", Math.round(s.conversion_rate * 100) + " %"), el("div", "muted", "conversion"),
+    el("div", "", `revenue ${s.revenue} · paid ${s.conversions}/${s.interactions}`), el("div", "", `price objections ${Math.round(s.price_objection_share * 100)} % · lost ${tnd(s.revenue_lost_millimes)}`),
+    el("div", "muted", `injections blocked ${s.injections_blocked}`));
+  return c;
+}
+async function doRun(which) {
+  const r = await api("/api/v1/runs", { method: "POST", pin: true, body: { tenant_id: TENANT, n: +$("#runN").value, seed: +$("#runSeed").value } });
+  if (which === 1) runA = r; else runB = r;
+  const out = $("#runsOut"); out.replaceChildren();
+  if (runA) out.appendChild(runCard(`Run 1 · script v${runA.script_version} · seed ${runA.seed}`, runA.summary));
+  if (runB) out.appendChild(runCard(`Run 2 · script v${runB.script_version} · seed ${runB.seed}`, runB.summary));
+  if (runA && runB) { const c = await api(`/api/v1/runs/compare?a=${runA.run_id}&b=${runB.run_id}`); out.appendChild(el("div", "green", `Δ conversion ${c.delta.conversion_points > 0 ? "+" : ""}${c.delta.conversion_points} pts · Δ revenue ${tnd(c.delta.revenue_millimes)} · ${c.label}`)); }
+}
+async function doPropose() {
+  const r = await api("/api/v1/strategy/propose", { method: "POST", pin: true, body: { tenant_id: TENANT, run_id: runA ? runA.run_id : null } });
+  const box = $("#recos"); box.replaceChildren();
+  for (const x of r.recommendations) { const it = el("div", "item"); it.append(el("div", "", `[${x.priority}] ${x.title}`), el("div", "muted", x.rationale), el("div", "who", x.evidence.map(e => `${e.metric} = ${e.value}`).join(" · "))); box.appendChild(it); }
+  if (r.draft) { draftVersion = r.draft.version; const ch = el("div", "item " + (r.check.ok ? "green" : "red"), `Fouchika check of v${r.draft.version}: ${r.check.ok ? "OK, only editable fields changed" : r.check.reasons.map(x => x.code).join(", ")} · diff: ${Object.keys(r.check.diff).join(", ")}`); box.appendChild(ch); }
+}
+async function doActivate() { if (!draftVersion) return alert("Propose first"); try { await api(`/api/v1/scripts/${draftVersion}/activate`, { method: "POST", pin: true, body: { tenant_id: TENANT, approver_id: $("#approver").value } }); show(`script v${draftVersion} activated by ${$("#approver").value}`); } catch (e) { alert(e.message); } }
+
+async function loadLimits() {
+  const l = await api("/api/v1/limits"); const box = $("#limits"); box.replaceChildren();
+  for (const [title, items] of [["What is simulated", l.simulated], ["Where humans supervise", l.human_supervision], ["Known failure modes", l.known_failure_modes]]) {
+    box.appendChild(el("h2", "", title)); const ul = el("ul"); for (const i of items) ul.appendChild(el("li", "", i)); box.appendChild(ul);
+  }
+}
+
+async function init() {
+  const t = await api("/api/v1/tenants");
+  for (const x of t.tenants) { const o = el("option", "", x.display_name); o.value = x.tenant_id; $("#tenant").appendChild(o); }
+  TENANT = t.active; $("#tenant").value = TENANT;
+  for (const a of ["mouna", "youssef", "ops_lead"]) { const o = el("option", "", "approver: " + a); o.value = a; $("#approver").appendChild(o); }
+  $("#tenant").onchange = async (e) => { try { await api("/api/v1/tenants/active", { method: "POST", pin: true, body: { tenant_id: e.target.value } }); TENANT = e.target.value; $("#feed").replaceChildren(); loadKpis(); loadApprovals(); if (WS) WS.close(); } catch (err) { alert("PIN? " + err.message); e.target.value = TENANT; } };
+  document.querySelectorAll("nav button").forEach(b => b.onclick = () => { document.querySelectorAll("nav button").forEach(x => x.classList.remove("active")); b.classList.add("active"); for (const id of ["live", "runs", "security", "limits"]) $("#tab-" + id).classList.toggle("hidden", id !== b.dataset.tab); if (b.dataset.tab === "security") loadSecurity(); if (b.dataset.tab === "limits") loadLimits(); });
+  document.querySelectorAll("[data-demo]").forEach(b => b.onclick = async () => { try { show(await api(`/api/v1/demo/${b.dataset.demo}`, { method: "POST", pin: true, body: { tenant_id: TENANT } })); } catch (e) { show("Error: " + e.message); } });
+  $("#verify").onclick = async () => { const r = await api(`/api/v1/audit/verify?tenant_id=${TENANT}`, { method: "POST" }); $("#verify").className = r.ok ? "ok" : "bad"; $("#verify").textContent = r.ok ? `Audit OK (${r.checked} rows)` : `BROKEN at row ${r.first_bad_seq}`; show(r); };
+  $("#run1").onclick = () => doRun(1).catch(e => alert(e.message)); $("#run2").onclick = () => doRun(2).catch(e => alert(e.message));
+  $("#propose").onclick = () => doPropose().catch(e => alert(e.message)); $("#activate").onclick = doActivate;
+  $("#bench").onclick = async () => { try { const r = await api(`/api/v1/redteam/benchmark?tenant_id=${TENANT}`, { method: "POST", pin: true }); const box = $("#benchOut"); box.replaceChildren(el("div", "big", `${r.stopped}/${r.attacks_run} stopped`), el("div", "", `blocked ${r.blocked} · rewritten ${r.rewritten} · escalated ${r.escalated} · passed ${r.passed + r.reached_sahbi}`), el("div", "", `false positives ${r.false_positives}/${r.benign_total}`), el("div", "muted", r.note)); } catch (e) { alert(e.message); } };
+  drawRadar(); loadKpis(); loadApprovals(); loadStatus(); setInterval(loadStatus, 15000);
+  connect();
+}
+let WS = null;
+function connect() {
+  const ws = WS = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws/events?tenant_id=${TENANT}`);
+  ws.onmessage = (m) => addEvent(JSON.parse(m.data));
+  ws.onclose = () => setTimeout(connect, 1500);
+}
+init();
+</script>
+</body>
+</html>
